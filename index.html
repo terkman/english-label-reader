@@ -12,23 +12,17 @@
 </head>
 
 <body>
-  <!-- Hidden canvas for image capture -->
   <canvas id="capture-canvas" hidden></canvas>
-
-  <!-- Freeze preview while OCR is running -->
   <canvas id="freeze-canvas"></canvas>
 
-  <!-- START SCREEN -->
   <main id="screen-start" class="screen">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
 
     <span class="part-badge">AWS Rekognition OCR</span>
-
     <div class="start-icon">🔍</div>
 
     <h1>English Label Reader</h1>
-
     <p class="subtitle">
       Point your camera at English text on labels, signs, boxes, bottles, or menus.
     </p>
@@ -38,12 +32,10 @@
         <span>📸</span>
         <p>Capture only the text inside the scan frame</p>
       </div>
-
       <div class="feature-card">
         <span>☁️</span>
         <p>Read text using AWS Rekognition DetectText</p>
       </div>
-
       <div class="feature-card">
         <span>🔊</span>
         <p>Show clean English text and read it aloud</p>
@@ -55,17 +47,12 @@
     </button>
   </main>
 
-  <!-- CAMERA SCREEN -->
   <main id="screen-camera" class="screen hidden">
     <video id="camera-video" autoplay playsinline muted></video>
 
-    <button id="btn-back" class="back-btn" type="button">
-      ← Back
-    </button>
+    <button id="btn-back" class="back-btn" type="button">← Back</button>
 
-    <div id="status-badge" class="status ready">
-      READY
-    </div>
+    <div id="status-badge" class="status ready">READY</div>
 
     <div id="scan-frame-wrap">
       <div id="scan-frame" class="scan-frame">
@@ -76,7 +63,6 @@
         <div class="corner corner-br"></div>
         <div id="scan-line" class="scan-line"></div>
       </div>
-
       <p>Aim at English text</p>
     </div>
 
@@ -91,25 +77,16 @@
     <section id="result-panel" class="result-panel">
       <div class="handle"></div>
 
-      <p id="result-label" class="result-label">
-        TEXT FOUND
-      </p>
-
+      <p id="result-label" class="result-label">TEXT FOUND</p>
       <div id="result-text" class="result-text"></div>
 
       <div class="result-actions">
-        <button id="btn-speak" class="btn btn-green" type="button">
-          🔊 Speak
-        </button>
-
-        <button id="btn-again" class="btn btn-ghost" type="button">
-          🔄 Scan Again
-        </button>
+        <button id="btn-speak" class="btn btn-green" type="button">🔊 Speak</button>
+        <button id="btn-again" class="btn btn-ghost" type="button">🔄 Scan Again</button>
       </div>
     </section>
   </main>
 
-  <!-- LOADING OVERLAY -->
   <div id="loading-overlay" class="loading-overlay hidden">
     <div class="spinner"></div>
     <p id="loading-text">Reading text…</p>
