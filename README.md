@@ -2,31 +2,19 @@
 
 เว็บอ่านข้อความภาษาอังกฤษจากฉลากสินค้า ป้าย กล่อง ขวด หรือเมนู โดยใช้กล้องมือถือ และใช้ AWS Rekognition DetectText เป็น OCR หลัก
 
-## วิธีใช้งาน
+## วิธีใช้
 
-1. กด Start Camera
-2. ให้ข้อความภาษาอังกฤษอยู่ในกรอบ
-3. กด Scan Text
-4. รอ OCR จาก AWS Rekognition
-5. ดูข้อความที่อ่านได้และฟังเสียงอ่าน
+1. เปิดเว็บบนมือถือ
+2. กด Start Camera
+3. เล็งข้อความให้อยู่ในกรอบ
+4. กด Scan Text
+5. รอระบบอ่านข้อความ
+6. กด Speak เพื่อฟังซ้ำ
+7. กด Scan Again เพื่อสแกนใหม่
 
-## ตั้งค่า AWS IAM Policy
+## Environment Variables สำหรับ Vercel
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "AllowDetectTextOnly",
-      "Effect": "Allow",
-      "Action": "rekognition:DetectText",
-      "Resource": "*"
-    }
-  ]
-}
-```
-
-## Environment Variables บน Vercel
+ตั้งค่าใน Vercel Project → Settings → Environment Variables
 
 ```text
 AWS_ACCESS_KEY_ID
@@ -34,8 +22,12 @@ AWS_SECRET_ACCESS_KEY
 AWS_REGION
 ```
 
-ตัวอย่าง region: `ap-southeast-1`
+แนะนำ region:
 
-## Deploy
+```text
+ap-southeast-1
+```
 
-Push โปรเจกต์นี้ขึ้น GitHub แล้ว Import เข้า Vercel จากนั้นตั้ง Environment Variables และ Redeploy
+## หมายเหตุ
+
+GitHub Pages ใช้ทดสอบหน้าเว็บและกล้องได้ แต่ OCR ต้องใช้ผ่าน Vercel เพราะต้องรันไฟล์ `api/ocr.js`

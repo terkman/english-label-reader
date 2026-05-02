@@ -1,9 +1,103 @@
 import { RekognitionClient, DetectTextCommand } from '@aws-sdk/client-rekognition';
-const MAX_IMAGE_BYTES=4*1024*1024;
-function setCors(res){res.setHeader('Access-Control-Allow-Origin','*');res.setHeader('Access-Control-Allow-Methods','POST, OPTIONS');res.setHeader('Access-Control-Allow-Headers','Content-Type');}
-function parseBody(body){if(!body)return{};if(typeof body==='string'){try{return JSON.parse(body)}catch{return{}}}return body;}
-function cleanBase64(input){return String(input||'').replace(/^data:image\/\w+;base64,/,'').trim();}
-function cleanLine(text){return String(text||'').replace(/[|_[\]{}<>~^`•·]/g,' ').replace(/[^A-Za-z0-9 .,%+\-&/():]/g,' ').replace(/\s{2,}/g,' ').trim();}
-function isGoodLine(line){if(!line||line.length<3||line.length>90)return false;const letters=(line.match(/[A-Za-z]/g)||[]).length,digits=(line.match(/[0-9]/g)||[]).length,chars=line.replace(/\s/g,'').length;if(letters<2||!chars)return false;const ratio=letters/chars;if(ratio<.35)return false;if(digits>=6&&ratio<.55)return false;if(/^[0-9\s.,:/+\-%]+$/.test(line))return false;if(/^(www|http|https)\b/i.test(line))return false;if(/^[A-Za-z]{1,2}$/.test(line))return false;return true;}
-function filterDetections(items=[]){const out=[],seen=new Set();for(const item of items){if(item.Type!=='LINE')continue;if((item.Confidence||0)<45)continue;const text=cleanLine(item.DetectedText||'');if(!isGoodLine(text))continue;const key=text.toLowerCase().replace(/[^a-z0-9]+/g,'');if(!key||seen.has(key))continue;seen.add(key);out.push({text,confidence:Math.round(item.Confidence||0)});if(out.length>=10)break;}return out;}
-export default async function handler(req,res){setCors(res);if(req.method==='OPTIONS')return res.status(204).end();if(req.method!=='POST')return res.status(405).json({ok:false,error:'Method not allowed. Use POST.'});try{const region=process.env.AWS_REGION,accessKeyId=process.env.AWS_ACCESS_KEY_ID,secretAccessKey=process.env.AWS_SECRET_ACCESS_KEY;if(!region||!accessKeyId||!secretAccessKey)return res.status(500).json({ok:false,error:'Server is missing AWS environment variables.'});const body=parseBody(req.body);const imageBase64=cleanBase64(body.imageBase64);if(!imageBase64)return res.status(400).json({ok:false,error:'Missing imageBase64.'});const imageBytes=Buffer.from(imageBase64,'base64');if(!imageBytes.length)return res.status(400).json({ok:false,error:'Invalid image data.'});if(imageBytes.length>MAX_IMAGE_BYTES)return res.status(413).json({ok:false,error:'Image too large. Please crop smaller or lower JPEG quality.'});const client=new RekognitionClient({region,credentials:{accessKeyId,secretAccessKey}});const command=new DetectTextCommand({Image:{Bytes:imageBytes}});const response=await client.send(command);const lines=filterDetections(response.TextDetections||[]);const text=lines.map(x=>x.text).join('\n');return res.status(200).json({ok:true,text,lines,rawCount:response.TextDetections?.length||0});}catch(err){console.error('[AWS Rekognition OCR]',err);return res.status(500).json({ok:false,error:err?.message||'OCR failed.'});}}
+
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+function parseBody(body) {
+  if (!body) return {};
+  if (typeof body === 'string') {
+    try { return JSON.parse(body); } catch { return {}; }
+  }
+  return body;
+}
+
+function cleanBase64(input) {
+  return String(input || '').replace(/^data:image\/\w+;base64,/, '').trim();
+}
+
+function cleanLine(text) {
+  return String(text || '')
+    .replace(/[|_[\]{}<>~^`•·]/g, ' ')
+    .replace(/[^A-Za-z0-9 .,%+\-&/():]/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function isGoodLine(line) {
+  if (!line || line.length < 3) return false;
+  if (line.length > 90) return false;
+  const letters = (line.match(/[A-Za-z]/g) || []).length;
+  const digits = (line.match(/[0-9]/g) || []).length;
+  const chars = line.replace(/\s/g, '').length;
+  if (letters < 2 || chars === 0) return false;
+  const letterRatio = letters / chars;
+  if (letterRatio < 0.35) return false;
+  if (digits >= 6 && letterRatio < 0.55) return false;
+  if (/^[0-9\s.,:/+\-%]+$/.test(line)) return false;
+  if (/^(www|http|https)\b/i.test(line)) return false;
+  if (/^[A-Za-z]{1,2}$/.test(line)) return false;
+  return true;
+}
+
+function filterDetections(textDetections = []) {
+  const lines = [];
+  const seen = new Set();
+  for (const item of textDetections) {
+    if (item.Type !== 'LINE') continue;
+    if ((item.Confidence || 0) < 45) continue;
+    const text = cleanLine(item.DetectedText || '');
+    if (!isGoodLine(text)) continue;
+    const key = text.toLowerCase().replace(/[^a-z0-9]+/g, '');
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    lines.push({ text, confidence: Math.round(item.Confidence || 0) });
+    if (lines.length >= 10) break;
+  }
+  return lines;
+}
+
+export default async function handler(req, res) {
+  setCors(res);
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Method not allowed. Use POST.' });
+
+  try {
+    const region = process.env.AWS_REGION;
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+    if (!region || !accessKeyId || !secretAccessKey) {
+      return res.status(500).json({ ok: false, error: 'Server is missing AWS environment variables.' });
+    }
+
+    const body = parseBody(req.body);
+    const imageBase64 = cleanBase64(body.imageBase64);
+    if (!imageBase64) return res.status(400).json({ ok: false, error: 'Missing imageBase64.' });
+
+    const imageBytes = Buffer.from(imageBase64, 'base64');
+    if (!imageBytes.length) return res.status(400).json({ ok: false, error: 'Invalid image data.' });
+    if (imageBytes.length > MAX_IMAGE_BYTES) {
+      return res.status(413).json({ ok: false, error: 'Image too large. Please crop smaller or lower JPEG quality.' });
+    }
+
+    const client = new RekognitionClient({
+      region,
+      credentials: { accessKeyId, secretAccessKey }
+    });
+
+    const command = new DetectTextCommand({ Image: { Bytes: imageBytes } });
+    const response = await client.send(command);
+    const lines = filterDetections(response.TextDetections || []);
+    const text = lines.map((line) => line.text).join('\n');
+
+    return res.status(200).json({ ok: true, text, lines, rawCount: response.TextDetections?.length || 0 });
+  } catch (err) {
+    console.error('[AWS Rekognition OCR]', err);
+    return res.status(500).json({ ok: false, error: err?.message || 'OCR failed.' });
+  }
+}
