@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0e1a" />
+  <title>English Label Reader AWS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="capture-canvas" hidden></canvas>
+  <canvas id="freeze-canvas"></canvas>
+  <main id="screen-start" class="screen">
+    <div class="orb orb-1"></div><div class="orb orb-2"></div>
+    <span class="part-badge">AWS Rekognition OCR</span>
+    <div class="start-icon">🔍</div>
+    <h1>English Label Reader</h1>
+    <p class="subtitle">Point your camera at English text on labels, signs, boxes, bottles, or menus.</p>
+    <div class="feature-list">
+      <div class="feature-card"><span>📸</span><p>Capture text inside the scan frame</p></div>
+      <div class="feature-card"><span>☁️</span><p>Read text with AWS Rekognition DetectText</p></div>
+      <div class="feature-card"><span>🔊</span><p>Show clean English text and read it aloud</p></div>
+    </div>
+    <button id="btn-start" class="btn btn-primary">📷 Start Camera</button>
+  </main>
+  <main id="screen-camera" class="screen hidden">
+    <video id="camera-video" autoplay playsinline muted></video>
+    <button id="btn-back" class="back-btn">← Back</button>
+    <div id="status-badge" class="status ready">READY</div>
+    <div id="scan-frame-wrap">
+      <div id="scan-frame" class="scan-frame">
+        <div class="scan-fill"></div>
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        <div id="scan-line" class="scan-line"></div>
+      </div>
+      <p>Aim at English text</p>
+    </div>
+    <div id="progress-wrap" class="hidden"><div id="progress-bar"></div></div>
+    <button id="btn-scan" class="btn btn-primary scan-btn">🔍 Scan Text</button>
+    <section id="result-panel" class="result-panel">
+      <div class="handle"></div>
+      <p id="result-label" class="result-label">TEXT FOUND</p>
+      <div id="result-text" class="result-text"></div>
+      <div class="result-actions">
+        <button id="btn-speak" class="btn btn-green">🔊 Speak</button>
+        <button id="btn-again" class="btn btn-ghost">🔄 Scan Again</button>
+      </div>
+    </section>
+  </main>
+  <div id="loading-overlay" class="loading-overlay hidden"><div class="spinner"></div><p id="loading-text">Reading text…</p></div>
+  <script src="script.js"></script>
+</body>
+</html>
