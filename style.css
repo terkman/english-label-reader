@@ -39,3 +39,14 @@
   letter-spacing: 0.4px;
   white-space: nowrap;
 }
+
+
+/* PATCH: no reading overlay + manual rescan only */
+.loading-overlay,
+.loading-overlay:not(.hidden) {
+  display: none !important;
+}
+
+#btn-auto {
+  display: none !important;
+}

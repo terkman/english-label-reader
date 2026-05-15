@@ -52,7 +52,7 @@
   btnBack.addEventListener('click', exitCamera);
   btnAuto.addEventListener('click', toggleAuto);
   btnSpeak.addEventListener('click', speakResult);
-  btnAgain.addEventListener('click', () => runOcr({ force: true, speak: true }));
+  btnAgain.addEventListener('click', scanAgainOnce);
 
   async function startCamera() {
     btnStart.disabled = true;
@@ -84,7 +84,7 @@
       autoEnabled = true;
       updateAutoButton();
       setStatus('searching', 'SEARCHING');
-      panelCaption.textContent = 'Move the label into the frame. Auto reading is on.';
+      panelCaption.textContent = 'Hold the label steady. Reading will start once.';
       startLoops();
     } catch (err) {
       console.error('[Camera]', err);
@@ -120,11 +120,20 @@
 
   function startLoops() {
     stopLoops();
+
     lastOcrAt = 0;
     lastMotionImage = null;
     lastTrackImage = null;
-    autoTimer = setInterval(autoScanTick, 750);
+    autoEnabled = false;
+    updateAutoButton();
+
+    // Keep light tracking active, but do not auto OCR repeatedly.
     motionTimer = setInterval(motionTick, MOTION_CHECK_MS);
+
+    setStatus('searching', 'SEARCHING');
+    panelCaption.textContent = 'Hold the label steady. Reading will start once.';
+
+    // Auto read once after opening the camera.
     setTimeout(() => runOcr({ force: true, speak: true }), 900);
   }
 
@@ -136,16 +145,9 @@
   }
 
   async function autoScanTick() {
-    if (!autoEnabled || isScanning || !cameraStream) return;
-    const elapsed = Date.now() - lastOcrAt;
-    if (elapsed < AUTO_INTERVAL_MS) return;
-    const motionScore = getMotionScore();
-    const forceRefresh = elapsed >= FORCE_INTERVAL_MS;
-    if (motionScore <= STABLE_THRESHOLD || forceRefresh || !activeAnchor) {
-      await runOcr({ force: forceRefresh || !activeAnchor, speak: true });
-    } else {
-      scanHint.textContent = 'Hold steady';
-    }
+    // Disabled by design:
+    // OCR will run once after camera starts and again only when Scan Again is pressed.
+    return;
   }
 
   function motionTick() {
@@ -173,7 +175,7 @@
     isScanning = true;
     lastOcrAt = Date.now();
     setStatus('reading', 'READING');
-    showLoading('Reading…');
+    // Reading overlay disabled
     progressWrap.classList.remove('hidden');
     progressBar.style.width = '20%';
 
@@ -216,6 +218,8 @@
       panelCaption.textContent = cleaned;
       setStatus('locked', 'LOCKED');
       scanFrameWrap.classList.add('dim');
+      autoEnabled = false;
+      updateAutoButton();
       if ((isNewText || force) && speak) speakResult();
     } catch (err) {
       console.error('[OCR]', err);
@@ -413,7 +417,7 @@
     arTextWrap.classList.add('hidden');
     setStatus('searching', 'SEARCHING');
     panelLabel.textContent = 'AUTO READER';
-    panelCaption.textContent = 'No readable English text found yet. Hold the label steady.';
+    panelCaption.textContent = 'No readable English text found. Tap Scan Again to try again.';
   }
 
   function showError(message) {
@@ -449,32 +453,28 @@
     scanFrameWrap.classList.remove('dim');
   }
 
-  function toggleAuto() {
-    autoEnabled = !autoEnabled;
-    updateAutoButton();
-    setStatus(autoEnabled ? 'searching' : 'ready', autoEnabled ? 'SEARCHING' : 'PAUSED');
-    if (autoEnabled) {
-      panelCaption.textContent = activeAnchor?.text || 'Auto reading is on.';
-      runOcr({ force: true, speak: false });
-    } else {
-      panelCaption.textContent = 'Auto reading is paused. Tap Scan Again to read once.';
-    }
+  function scanAgainOnce() {
+    stopSpeech();
+    activeAnchor = null;
+    arTextWrap.classList.add('hidden');
+    scanFrameWrap.classList.remove('dim');
+    panelLabel.textContent = 'READING';
+    panelCaption.textContent = 'Hold the label steady.';
+    setStatus('reading', 'READING');
+
+    runOcr({ force: true, speak: true });
   }
 
-  function updateAutoButton() { btnAuto.textContent = autoEnabled ? '⏸ Pause' : '▶️ Auto'; }
+  function toggleAuto() {
+    // Auto repeat is disabled. Use Scan Again to read once.
+    autoEnabled = false;
+    updateAutoButton();
+    panelCaption.textContent = activeAnchor?.text || 'Tap Scan Again to read once.';
+    setStatus(activeAnchor ? 'locked' : 'ready', activeAnchor ? 'LOCKED' : 'READY');
+  }
 
-  function makeDisplayLines(text) {
-    const lines = String(text || '').split(/\n+/).map((line) => line.trim()).filter(Boolean);
-    if (lines.length >= 2) return { line1: limitLine(lines[0], 22), line2: limitLine(lines[1], 24) };
-    const first = lines[0] || '';
-    if (first.length <= 21) return { line1: first, line2: '' };
-    const words = first.split(/\s+/);
-    let line1 = '', line2 = '';
-    for (const word of words) {
-      if ((line1 + ' ' + word).trim().length <= 20) line1 = (line1 + ' ' + word).trim();
-      else line2 = (line2 + ' ' + word).trim();
-    }
-    return { line1: limitLine(line1 || first, 22), line2: limitLine(line2, 24) };
+  function updateAutoButton() {
+    if (btnAuto) btnAuto.textContent = 'Auto Off';
   }
 
   function limitLine(text, max) { const t = String(text || '').trim(); return t.length <= max ? t : `${t.slice(0, max - 1).trim()}…`; }
@@ -500,14 +500,10 @@
 
   function stopSpeech() { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); btnSpeak.classList.remove('speaking'); }
   function setStatus(type, text) { statusBadge.className = `status ${type}`; statusBadge.textContent = text; }
-  function showLoading(text) { loadingText.textContent = text; loadingOverlay.classList.remove('hidden'); }
-  function hideLoading() { loadingOverlay.classList.add('hidden'); }
-  function textKey(text) { return String(text || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
-  function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
-
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.getVoices();
-    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  function showLoading(text) {
+    // Overlay disabled to keep camera view clear.
+    if (loadingText) loadingText.textContent = text || '';
+    if (loadingOverlay) loadingOverlay.classList.add('hidden');
   }
 
   window.addEventListener('pagehide', stopCamera);
