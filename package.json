@@ -1,9 +1,9 @@
 {
   "name": "english-label-reader",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "Mobile English label reader using AWS Rekognition DetectText and Vercel Functions.",
+  "description": "AR-like auto English label reader using AWS Rekognition DetectText and Vercel Functions.",
   "dependencies": {
     "@aws-sdk/client-rekognition": "^3.699.0"
   },

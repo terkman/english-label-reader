@@ -2,98 +2,65 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0a0e1a" />
   <title>English Label Reader AWS</title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Space+Mono:wght@700&display=swap"
-    rel="stylesheet"
-  />
-  <link rel="stylesheet" href="style.css?v=part5-3d-b" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Space+Mono:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=level3" />
 </head>
 <body>
   <canvas id="capture-canvas" hidden></canvas>
-  <canvas id="freeze-canvas"></canvas>
+  <canvas id="motion-canvas" hidden></canvas>
 
-  <!-- START SCREEN -->
   <main id="screen-start" class="screen">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
-
     <span class="part-badge">AWS Rekognition OCR</span>
     <div class="start-icon">🔍</div>
-
-    <h1>English Label Reader</h1>
-    <p class="subtitle">
-      Point your camera at English text on labels, signs, boxes, bottles, or menus.
-    </p>
-
+    <h1>AR-like Label Reader</h1>
+    <p class="subtitle">Open the camera and let the system read English text automatically.</p>
     <div class="feature-list">
-      <div class="feature-card">
-        <span>📸</span>
-        <p>Capture only the text inside the scan frame</p>
-      </div>
-      <div class="feature-card">
-        <span>☁️</span>
-        <p>Read text using AWS Rekognition DetectText</p>
-      </div>
-      <div class="feature-card">
-        <span>✨</span>
-        <p>Show the result as 3D-style text, then read it aloud</p>
-      </div>
+      <div class="feature-card"><span>📷</span><p>Auto scans when the camera is stable</p></div>
+      <div class="feature-card"><span>📍</span><p>Places 3D-style text near the detected label</p></div>
+      <div class="feature-card"><span>🔊</span><p>Speaks only when new text is detected</p></div>
     </div>
-
     <button id="btn-start" class="btn btn-primary" type="button">📷 Start Camera</button>
   </main>
 
-  <!-- CAMERA SCREEN -->
   <main id="screen-camera" class="screen hidden">
     <video id="camera-video" autoplay playsinline muted></video>
-
     <button id="btn-back" class="back-btn" type="button">← Back</button>
-    <div id="status-badge" class="status ready">READY</div>
+    <div id="status-badge" class="status searching">SEARCHING</div>
 
     <div id="scan-frame-wrap">
       <div id="scan-frame" class="scan-frame">
         <div class="scan-fill"></div>
-        <div class="corner corner-tl"></div>
-        <div class="corner corner-tr"></div>
-        <div class="corner corner-bl"></div>
-        <div class="corner corner-br"></div>
-        <div id="scan-line" class="scan-line"></div>
+        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
+        <div class="scan-line"></div>
       </div>
-      <p>Aim at English text</p>
+      <p id="scan-hint">Aim at English text</p>
     </div>
 
-    <!-- 3D result text -->
-    <section id="result-3d-wrap" class="result-3d-wrap hidden" aria-live="polite">
-      <p id="result-mini-label" class="result-mini-label">TEXT FOUND</p>
-      <div id="result-3d" class="result-3d">
-        <div id="result-line-1" class="result-line line-1"></div>
-        <div id="result-line-2" class="result-line line-2"></div>
+    <section id="ar-text-wrap" class="ar-text-wrap hidden" aria-live="polite">
+      <p id="ar-label" class="ar-label">LOCKED</p>
+      <div class="ar-word-stack">
+        <div id="ar-line-1" class="ar-line ar-line-1"></div>
+        <div id="ar-line-2" class="ar-line ar-line-2"></div>
       </div>
     </section>
 
-    <div id="progress-wrap" class="hidden">
-      <div id="progress-bar"></div>
-    </div>
+    <div id="progress-wrap" class="hidden"><div id="progress-bar"></div></div>
 
-    <button id="btn-scan" class="btn btn-primary scan-btn" type="button">🔍 Scan Text</button>
-
-    <!-- Bottom controls stay -->
-    <section id="control-panel" class="control-panel hidden">
+    <section id="control-panel" class="control-panel">
       <div class="handle"></div>
-      <p id="panel-label" class="panel-label">TEXT FOUND</p>
-      <div id="panel-caption" class="panel-caption">Tap Speak to hear the detected text again.</div>
-
+      <p id="panel-label" class="panel-label">AUTO READER</p>
+      <div id="panel-caption" class="panel-caption">Move the label into the frame. The system will read automatically.</div>
       <div class="result-actions">
-        <button id="btn-speak" class="btn btn-green" type="button">🔊 Speak</button>
-        <button id="btn-again" class="btn btn-ghost" type="button">🔄 Scan Again</button>
+        <button id="btn-auto" class="btn btn-primary small" type="button">⏸ Pause</button>
+        <button id="btn-speak" class="btn btn-green small" type="button">🔊 Speak</button>
+        <button id="btn-again" class="btn btn-ghost small" type="button">🔄 Scan Again</button>
       </div>
     </section>
   </main>
@@ -103,6 +70,6 @@
     <p id="loading-text">Reading text…</p>
   </div>
 
-  <script src="script.js?v=part5-3d-b"></script>
+  <script src="script.js?v=level3"></script>
 </body>
 </html>

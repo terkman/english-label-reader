@@ -11,11 +11,7 @@ function setCors(res) {
 function parseBody(body) {
   if (!body) return {};
   if (typeof body === 'string') {
-    try {
-      return JSON.parse(body);
-    } catch {
-      return {};
-    }
+    try { return JSON.parse(body); } catch { return {}; }
   }
   return body;
 }
@@ -33,23 +29,17 @@ function cleanLine(text) {
 }
 
 function isGoodLine(line) {
-  if (!line || line.length < 3) return false;
-  if (line.length > 90) return false;
-
+  if (!line || line.length < 3 || line.length > 90) return false;
   const letters = (line.match(/[A-Za-z]/g) || []).length;
   const digits = (line.match(/[0-9]/g) || []).length;
   const chars = line.replace(/\s/g, '').length;
-
   if (letters < 2 || chars === 0) return false;
-
-  const letterRatio = letters / chars;
-  if (letterRatio < 0.35) return false;
-
-  if (digits >= 6 && letterRatio < 0.55) return false;
+  const ratio = letters / chars;
+  if (ratio < 0.35) return false;
+  if (digits >= 6 && ratio < 0.55) return false;
   if (/^[0-9\s.,:/+\-%]+$/.test(line)) return false;
   if (/^(www|http|https)\b/i.test(line)) return false;
   if (/^[A-Za-z]{1,2}$/.test(line)) return false;
-
   return true;
 }
 
@@ -66,11 +56,21 @@ function filterDetections(textDetections = []) {
 
     const key = text.toLowerCase().replace(/[^a-z0-9]+/g, '');
     if (!key || seen.has(key)) continue;
-
     seen.add(key);
+
+    const bb = item.Geometry?.BoundingBox || null;
+    const polygon = item.Geometry?.Polygon || null;
+
     lines.push({
       text,
-      confidence: Math.round(item.Confidence || 0)
+      confidence: Math.round(item.Confidence || 0),
+      box: bb ? {
+        left: bb.Left || 0,
+        top: bb.Top || 0,
+        width: bb.Width || 0,
+        height: bb.Height || 0
+      } : null,
+      polygon: Array.isArray(polygon) ? polygon.map((p) => ({ x: p.X || 0, y: p.Y || 0 })) : []
     });
 
     if (lines.length >= 10) break;
@@ -82,15 +82,10 @@ function filterDetections(textDetections = []) {
 export default async function handler(req, res) {
   setCors(res);
 
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
+  if (req.method === 'OPTIONS') return res.status(204).end();
 
   if (req.method !== 'POST') {
-    return res.status(405).json({
-      ok: false,
-      error: 'Method not allowed. Use POST.'
-    });
+    return res.status(405).json({ ok: false, error: 'Method not allowed. Use POST.' });
   }
 
   try {
@@ -99,69 +94,30 @@ export default async function handler(req, res) {
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 
     if (!region || !accessKeyId || !secretAccessKey) {
-      return res.status(500).json({
-        ok: false,
-        error: 'Server is missing AWS environment variables.'
-      });
+      return res.status(500).json({ ok: false, error: 'Server is missing AWS environment variables.' });
     }
 
     const body = parseBody(req.body);
     const imageBase64 = cleanBase64(body.imageBase64);
 
-    if (!imageBase64) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Missing imageBase64.'
-      });
-    }
+    if (!imageBase64) return res.status(400).json({ ok: false, error: 'Missing imageBase64.' });
 
     const imageBytes = Buffer.from(imageBase64, 'base64');
-
-    if (!imageBytes.length) {
-      return res.status(400).json({
-        ok: false,
-        error: 'Invalid image data.'
-      });
-    }
-
+    if (!imageBytes.length) return res.status(400).json({ ok: false, error: 'Invalid image data.' });
     if (imageBytes.length > MAX_IMAGE_BYTES) {
-      return res.status(413).json({
-        ok: false,
-        error: 'Image too large. Please crop smaller or lower JPEG quality.'
-      });
+      return res.status(413).json({ ok: false, error: 'Image too large. Please crop smaller or lower JPEG quality.' });
     }
 
-    const client = new RekognitionClient({
-      region,
-      credentials: {
-        accessKeyId,
-        secretAccessKey
-      }
-    });
-
-    const command = new DetectTextCommand({
-      Image: {
-        Bytes: imageBytes
-      }
-    });
-
+    const client = new RekognitionClient({ region, credentials: { accessKeyId, secretAccessKey } });
+    const command = new DetectTextCommand({ Image: { Bytes: imageBytes } });
     const response = await client.send(command);
+
     const lines = filterDetections(response.TextDetections || []);
     const text = lines.map((line) => line.text).join('\n');
 
-    return res.status(200).json({
-      ok: true,
-      text,
-      lines,
-      rawCount: response.TextDetections?.length || 0
-    });
-
+    return res.status(200).json({ ok: true, text, lines, rawCount: response.TextDetections?.length || 0 });
   } catch (err) {
     console.error('[AWS Rekognition OCR]', err);
-
-    return res.status(500).json({
-      ok: false,
-      error: err?.message || 'OCR failed.'
-    });
+    return res.status(500).json({ ok: false, error: err?.message || 'OCR failed.' });
   }
 }
