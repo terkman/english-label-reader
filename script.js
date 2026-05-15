@@ -173,7 +173,7 @@
     isScanning = true;
     lastOcrAt = Date.now();
     setStatus('reading', 'READING');
-    showLoading('Reading text with AWS Rekognition…');
+    showLoading('Reading…');
     progressWrap.classList.remove('hidden');
     progressBar.style.width = '20%';
 
