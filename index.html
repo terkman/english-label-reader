@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0a0e1a" />
   <title>English Label Reader AWS</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Space+Mono:wght@700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=level3" />
+  <link rel="stylesheet" href="style.css?v=fix-scan-manual-1" />
 </head>
+
 <body>
   <canvas id="capture-canvas" hidden></canvas>
   <canvas id="motion-canvas" hidden></canvas>
@@ -16,29 +18,38 @@
   <main id="screen-start" class="screen">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
+
     <span class="part-badge">AWS Rekognition OCR</span>
     <div class="start-icon">🔍</div>
+
     <h1>AR-like Label Reader</h1>
-    <p class="subtitle">Open the camera and let the system read English text automatically.</p>
+    <p class="subtitle">
+      Open the camera and let the system read English text once. Tap Scan Again to read a new label.
+    </p>
+
     <div class="feature-list">
-      <div class="feature-card"><span>📷</span><p>Auto scans when the camera is stable</p></div>
+      <div class="feature-card"><span>📷</span><p>Reads once after the camera starts</p></div>
       <div class="feature-card"><span>📍</span><p>Places 3D-style text near the detected label</p></div>
-      <div class="feature-card"><span>🔊</span><p>Speaks only when new text is detected</p></div>
+      <div class="feature-card"><span>🔊</span><p>Tap Speak to hear the detected text again</p></div>
     </div>
+
     <button id="btn-start" class="btn btn-primary" type="button">📷 Start Camera</button>
   </main>
 
   <main id="screen-camera" class="screen hidden">
     <video id="camera-video" autoplay playsinline muted></video>
+
     <button id="btn-back" class="back-btn" type="button">← Back</button>
-    <div id="status-badge" class="status searching">SEARCHING</div>
+    <div id="status-badge" class="status ready">READY</div>
 
     <div id="scan-frame-wrap">
       <div id="scan-frame" class="scan-frame">
         <div class="scan-fill"></div>
-        <div class="corner corner-tl"></div><div class="corner corner-tr"></div>
-        <div class="corner corner-bl"></div><div class="corner corner-br"></div>
-        <div class="scan-line"></div>
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+        <div id="scan-line" class="scan-line"></div>
       </div>
       <p id="scan-hint">Aim at English text</p>
     </div>
@@ -56,20 +67,17 @@
     <section id="control-panel" class="control-panel">
       <div class="handle"></div>
       <p id="panel-label" class="panel-label">AUTO READER</p>
-      <div id="panel-caption" class="panel-caption">Move the label into the frame. The system will read automatically.</div>
+      <div id="panel-caption" class="panel-caption">
+        Hold the label steady. Reading will start once.
+      </div>
+
       <div class="result-actions">
-        <button id="btn-auto" class="btn btn-primary small" type="button">⏸ Pause</button>
         <button id="btn-speak" class="btn btn-green small" type="button">🔊 Speak</button>
         <button id="btn-again" class="btn btn-ghost small" type="button">🔄 Scan Again</button>
       </div>
     </section>
   </main>
 
-  <div id="loading-overlay" class="loading-overlay hidden">
-    <div class="spinner"></div>
-    <p id="loading-text">Reading text…</p>
-  </div>
-
-  <script src="script.js?v=level3"></script>
+  <script src="script.js?v=fix-scan-manual-1"></script>
 </body>
 </html>
